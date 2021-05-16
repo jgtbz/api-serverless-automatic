@@ -5,7 +5,7 @@ const send = async ({ topic, message }) => {
   const Message = typeof(message) === 'string'
     ? message
     : JSON.stringify(message)
-  const TopicArn =  `arn:aws:sns:${config.aws.region}:{${config.aws.id}}:${config.project}-${topic}-${config.stage}`
+  const TopicArn =  `arn:aws:sns:${config.aws.region}:${config.aws.id}:${config.project}-${topic}-${config.stage}`
 
   const params = {
     Message,
