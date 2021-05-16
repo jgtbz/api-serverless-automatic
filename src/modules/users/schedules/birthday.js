@@ -18,6 +18,6 @@ export const handler = async () => {
       name: 'Users 3'
     }
   ]
-  await App.Support.asyncPromise(users, ({ name }) => App.AWS.SNS.send({ topic: 'users-birthday', message: { from: 'Schedule', name: user } }))
+  await App.Support.asyncPromise(users, ({ name }) => App.AWS.SNS.send({ topic: 'users-birthday', message: { from: 'Schedule', name } }))
   console.log('Finished Schedule UsersBirthday')
 }
