@@ -1,0 +1,8 @@
+UsersBirthdaySchedule:
+  name: basic-schedules-users-birthday-dev
+  handler: src/modules/users/schedules/birthday.handler
+  timeout: 900
+  events:
+    - schedule:
+        rate: rate (50 minutes)
+        enabled: true

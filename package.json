@@ -1,0 +1,40 @@
+{
+  "name": "api-serverless",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "serve": "./node_modules/.bin/serverless offline start",
+    "deploy-dev": "babel-node ./src/start.js",
+    "remove-dev": "./node_modules/.bin/serverless remove -s dev"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.834.0",
+    "serverless-offline-sqs": "^4.1.1",
+    "write-yaml": "^1.0.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.13.0",
+    "@babel/core": "^7.13.8",
+    "@babel/node": "^7.13.0",
+    "@babel/plugin-proposal-object-rest-spread": "^7.13.8",
+    "@babel/plugin-transform-destructuring": "^7.13.0",
+    "@babel/plugin-transform-runtime": "^7.13.9",
+    "@babel/preset-env": "^7.13.9",
+    "@babel/runtime": "^7.13.8",
+    "babel-loader": "^8.2.2",
+    "dotenv": "^8.2.0",
+    "nodemon": "1.18.7",
+    "prettier": "2.2.1",
+    "serverless": "^2.35.0",
+    "serverless-dotenv-plugin": "^3.9.0",
+    "serverless-offline": "^6.9.0",
+    "serverless-offline-scheduler": "^0.4.2",
+    "serverless-pseudo-parameters": "^2.5.0",
+    "serverless-webpack": "^5.3.1",
+    "webpack": "^4.35.2",
+    "webpack-node-externals": "^2.5.2"
+  }
+}

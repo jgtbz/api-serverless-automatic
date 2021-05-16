@@ -1,0 +1,52 @@
+customRole:
+  Type: AWS::IAM::Role
+  Properties:
+    RoleName: ${self:service}-role-${self:custom.settings.stage}
+    AssumeRolePolicyDocument:
+      Version: '2012-10-17'
+      Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action: sts:AssumeRole
+    Policies:
+      - PolicyName: ${self:service}-role-${self:custom.settings.stage}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+              Resource:
+                Fn::Join:
+                  - ':'
+                  - - 'arn:aws:logs'
+                    - '${self:custom.settings.region}'
+                    - '${self:custom.settings.accountId}'
+                    - 'log-group:/aws/lambda/*:*:*'
+            - Effect: 'Allow'
+              Action:
+                - 'ec2:DescribeNetworkInterfaces'
+                - 'ec2:CreateNetworkInterface'
+                - 'ec2:DeleteNetworkInterface'
+                - 'ec2:DescribeInstances'
+                - 'ec2:AttachNetworkInterface'
+                - 'lambda:CreateEventSourceMapping'
+                - 'lambda:ListEventSourceMappings'
+                - 'lambda:ListFunctions'
+                - 'sqs:DeleteMessage'
+                - 'sqs:GetQueueAttributes'
+                - 'sqs:ReceiveMessage'
+              Resource: '*'
+            - Effect: 'Allow'
+              Action:
+                - 's3:PutObject'
+              Resource:
+                Fn::Join:
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - 'dlvery-${self:custom.settings.stage}'
+                    - '/*'

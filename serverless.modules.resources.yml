@@ -1,0 +1,53 @@
+UsersCreateTopic:
+  Type: 'AWS::SNS::Topic'
+  Properties:
+    TopicName: basic-users-create-dev
+UsersBirthdayTopic:
+  Type: 'AWS::SNS::Topic'
+  Properties:
+    TopicName: basic-users-birthday-dev
+UsersCreateWalletQueue:
+  Type: 'AWS::SNS::Queue'
+  Properties:
+    QueueName: basic-users-create-wallet-dev
+    DelaySeconds: 900
+    FifoQueue: false
+UsersSendEmailWelcomeQueue:
+  Type: 'AWS::SNS::Queue'
+  Properties:
+    QueueName: basic-users-send-email-welcome-dev
+    DelaySeconds: 900
+    FifoQueue: false
+UsersSendEmailBirthdateQueue:
+  Type: 'AWS::SNS::Queue'
+  Properties:
+    QueueName: basic-users-send-email-birthdate-dev
+    DelaySeconds: 900
+    FifoQueue: false
+UsersCreateWalletSubscription:
+  Type: 'AWS::SNS::Subscription'
+  Properties:
+    TopicArn: '!Ref UsersCreateTopic'
+    Endpoint:
+      'Fn::GetAtt:':
+        - UsersCreateWalletQueue
+        - Arn
+    Protocol: sqs
+UsersSendEmailWelcomeSubscription:
+  Type: 'AWS::SNS::Subscription'
+  Properties:
+    TopicArn: '!Ref UsersCreateTopic'
+    Endpoint:
+      'Fn::GetAtt:':
+        - UsersSendEmailWelcomeQueue
+        - Arn
+    Protocol: sqs
+UsersSendEmailBirthdateSubscription:
+  Type: 'AWS::SNS::Subscription'
+  Properties:
+    TopicArn: '!Ref UsersBirthdayTopic'
+    Endpoint:
+      'Fn::GetAtt:':
+        - UsersSendEmailBirthdateQueue
+        - Arn
+    Protocol: sqs

@@ -1,0 +1,10 @@
+node_modules
+build
+dist
+.build
+.dist
+.env
+*-lock.json
+*.lock
+.webpack
+.serverless

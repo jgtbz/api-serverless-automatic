@@ -1,0 +1,39 @@
+UsersCreateWalletConsumer:
+  name: basic-users-create-wallet-dev
+  handler: src/modules/users/consumers/createWallet.handler
+  timeout: 900
+  reservedConcurrency: 1
+  events:
+    - sqs:
+        arn:
+          'Fn::GetAtt':
+            - UsersCreateWalletQueue
+            - Arn
+        batchSize: 1
+        enabled: true
+UsersSendEmailWelcomeConsumer:
+  name: basic-users-send-email-welcome-dev
+  handler: src/modules/users/consumers/sendEmailWelcome.handler
+  timeout: 900
+  reservedConcurrency: 1
+  events:
+    - sqs:
+        arn:
+          'Fn::GetAtt':
+            - UsersSendEmailWelcomeQueue
+            - Arn
+        batchSize: 1
+        enabled: true
+UsersSendEmailBirthdateConsumer:
+  name: basic-users-send-email-birthdate-dev
+  handler: src/modules/users/consumers/sendSMSBirthdate.handler
+  timeout: 900
+  reservedConcurrency: 1
+  events:
+    - sqs:
+        arn:
+          'Fn::GetAtt':
+            - UsersSendEmailBirthdateQueue
+            - Arn
+        batchSize: 1
+        enabled: true

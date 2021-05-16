@@ -1,0 +1,42 @@
+service: basic
+frameworkVersion: '2'
+useDotenv: true
+provider:
+  name: aws
+  runtime: nodejs12.x
+  stage: ${opt:stage, 'dev'}
+  memorySize: 128
+  region: ${opt:region, 'us-east-1'}
+  lambdaHashingVersion: '20201221'
+  deploymentBucket:
+    blockPublicAccess: true
+    skipPolicySetup: false
+    name: serverless-${self:service}
+    maxPreviousDeploymentArtifacts: 10
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-webpack
+  - serverless-pseudo-parameters
+  - serverless-offline
+  - serverless-offline-scheduler
+  - serverless-offline-sqs
+custom:
+  settings:
+    region: '#{AWS::Region}'
+    stage: ${opt:stage, 'dev'}
+    accountId: '#{AWS::AccountId}'
+    debug: true
+  webpack:
+    packager: 'npm'
+    includeModules:
+      forceExclude:
+        - aws-sdk
+        - '@babel/runtime'
+resources:
+  Resources:
+    ${file(./serverless.resources.yml)}
+    ${file(./serverless.modules.resources.yml)}
+functions:
+  - ${file(../serverless.endpoints.yml)}
+  - ${file(../serverless.modules.schedules.yml)}
+  - ${file(../serverless.modules.consumers.yml)}
