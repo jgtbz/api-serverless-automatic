@@ -11,7 +11,7 @@ const capitalizeName = (value = '') => {
 }
 
 const startState = () => {
-  const [_, ...modules] = fs.readdirSync('src/modules')
+  const [...modules] = fs.readdirSync('src/modules')
   modules.forEach(module => {
     const hasEndpoints = fs.existsSync(`src/modules/${module}/endpoints`)
 
