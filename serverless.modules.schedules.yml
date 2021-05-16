@@ -1,5 +1,5 @@
 UsersBirthdaySchedule:
-  name: basic-schedules-users-birthday-dev
+  name: undefined-schedules-users-birthday-undefined
   handler: src/modules/users/schedules/birthday.handler
   timeout: 900
   events:

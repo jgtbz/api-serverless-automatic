@@ -1,9 +1,8 @@
 import fs from 'fs'
+import yaml from 'write-yaml'
 
 import { state } from './app'
 import config from './config'
-
-import yaml from 'write-yaml'
 
 const capitalize = ([first = '', ...rest]) => first.toUpperCase() + rest.join('').toLowerCase()
 const capitalizeName = (value = '') => {
@@ -14,6 +13,15 @@ const capitalizeName = (value = '') => {
 const startState = () => {
   const [_, ...modules] = fs.readdirSync('src/modules')
   modules.forEach(module => {
+    const hasEndpoints = fs.existsSync(`src/modules/${module}/endpoints`)
+
+    if (hasEndpoints) {
+      const endpoints = fs.readdirSync(`src/modules/${module}/endpoints`)
+      endpoints.forEach(endpoint => {
+        require(`./modules/${module}/endpoints/${endpoint}`)
+      })
+    }
+    
     const hasConsumers = fs.existsSync(`src/modules/${module}/consumers`)
 
     if (hasConsumers) {
@@ -42,7 +50,7 @@ const start = () => {
     [capitalizeName(name) + 'Topic']: {
       Type: 'AWS::SNS::Topic',
       Properties: {
-        TopicName: config.PROJECT_NAME + '-' + name + '-' + config.stage
+        TopicName: config.project + '-' + name + '-' + config.stage
       }
     }
   }), {})
@@ -51,7 +59,7 @@ const start = () => {
     [capitalizeName(name) + 'Queue']: {
       Type: 'AWS::SNS::Queue',
       Properties: {
-        QueueName: config.PROJECT_NAME + '-' + name + '-' + config.stage,
+        QueueName: config.project + '-' + name + '-' + config.stage,
         DelaySeconds: options.timeout,
         FifoQueue: options.fifo
       }
@@ -76,7 +84,7 @@ const start = () => {
   const consumers = state.queues.reduce((result, { name, path, options }) => ({
     ...result,
     [capitalizeName(name) + 'Consumer']: {
-      name: config.PROJECT_NAME + '-' + name + '-' + config.stage,
+      name: config.project + '-' + name + '-' + config.stage,
       handler: path + '.handler',
       timeout: options.timeout,
       reservedConcurrency: options.concurrency,
@@ -99,7 +107,7 @@ const start = () => {
   const schedules = state.schedules.reduce((result, { name, path, options }) => ({
     ...result,
     [capitalizeName(name) + 'Schedule']: {
-      name: config.PROJECT_NAME + '-' + 'schedules' + '-' + name + '-' + config.stage,
+      name: config.project + '-' + 'schedules' + '-' + name + '-' + config.stage,
       handler: path + '.handler',
       timeout: options.timeout,
       events: [
@@ -112,14 +120,32 @@ const start = () => {
       ]
     }
   }), {})
+  const endpoints = state.endpoints.reduce((result, { name, path, options }) => ({
+    ...result,
+    [capitalizeName(name) + 'Endpoint']: {
+      name: config.project + '-' + 'endpoints-' + '-' + name + '-' + config.stage,
+      handler: path + '.handler',
+      timeout: 30,
+      events: [
+        {
+          http: {
+            path: options.path,
+            method: options.method
+          }
+        }
+      ]
+    }
+  }), {})
 
   const resourcesModules = { ...topics, ...queues, ...subscriptions }
   const resourcesConsumers = { ...consumers }
   const resourcesSchedules = { ...schedules }
+  const resourcesEndpoints = { ...endpoints }
 
   yaml.sync('./serverless.modules.resources.yml', resourcesModules)
   yaml.sync('./serverless.modules.consumers.yml', resourcesConsumers)
   yaml.sync('./serverless.modules.schedules.yml', resourcesSchedules)
+  yaml.sync('./serverless.modules.endpoints.yml', resourcesEndpoints)
 }
 
 start()

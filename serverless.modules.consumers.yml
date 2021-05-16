@@ -1,5 +1,5 @@
 UsersCreateWalletConsumer:
-  name: basic-users-create-wallet-dev
+  name: undefined-users-create-wallet-undefined
   handler: src/modules/users/consumers/createWallet.handler
   timeout: 900
   reservedConcurrency: 1
@@ -12,7 +12,7 @@ UsersCreateWalletConsumer:
         batchSize: 1
         enabled: true
 UsersSendEmailWelcomeConsumer:
-  name: basic-users-send-email-welcome-dev
+  name: undefined-users-send-email-welcome-undefined
   handler: src/modules/users/consumers/sendEmailWelcome.handler
   timeout: 900
   reservedConcurrency: 1
@@ -25,7 +25,7 @@ UsersSendEmailWelcomeConsumer:
         batchSize: 1
         enabled: true
 UsersSendEmailBirthdateConsumer:
-  name: basic-users-send-email-birthdate-dev
+  name: undefined-users-send-email-birthdate-undefined
   handler: src/modules/users/consumers/sendSMSBirthdate.handler
   timeout: 900
   reservedConcurrency: 1

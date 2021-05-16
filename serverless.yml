@@ -37,6 +37,6 @@ resources:
     ${file(./serverless.resources.yml)}
     ${file(./serverless.modules.resources.yml)}
 functions:
-  - ${file(../serverless.endpoints.yml)}
+  - ${file(../serverless.modules.endpoints.yml)}
   - ${file(../serverless.modules.schedules.yml)}
   - ${file(../serverless.modules.consumers.yml)}

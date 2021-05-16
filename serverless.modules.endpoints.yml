@@ -1,0 +1,8 @@
+UsersCreateEndpoint:
+  name: undefined-endpoints--users-create-undefined
+  handler: src/modules/users/endpoints/create.handler
+  timeout: 30
+  events:
+    - http:
+        path: /create
+        method: POST
