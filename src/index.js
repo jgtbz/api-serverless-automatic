@@ -128,7 +128,7 @@ const buildModulesEndpoints = (state) => {
 const buildModulesConsumers = (state) => {
   const consumers = state.queues.reduce((result, { name, path, options }) => ({
     ...result,
-    [capitalizeKebabCase(name) + 'Consumer']: {
+    [serviceName(name, 'Consumer')]: {
       name: kebabCase(config.project, 'consumers', name, config.stage),
       handler: concat(path, '.handler'),
       timeout: options.timeout,
@@ -157,7 +157,7 @@ const buildModulesConsumers = (state) => {
 const buildModulesSchedules = (state) => {
   const schedules = state.schedules.reduce((result, { name, path, options }) => ({
     ...result,
-    [capitalizeKebabCase(name) + 'Schedule']: {
+    [serviceName(name, 'Schedule')]: {
       name: kebabCase(config.project, 'schedules', name, config.stage),
       handler: concat(path, '.handler'),
       timeout: options.timeout,
