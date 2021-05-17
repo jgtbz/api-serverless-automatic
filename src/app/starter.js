@@ -16,12 +16,15 @@ const runServices = (module, service) => {
 }
 
 const buildServiceName = (value, { name }) => serviceName(name, value)
-const buildService = (value, service, callback) => value.reduce((result, item) => ({
-  ...result,
-  [buildServiceName(service, item)]: callback(item)
-}), {})
+const buildService = (value = [], service, callback) => {
+  console.log(value, service)
+  return value.reduce((result, item) => ({
+    ...result,
+    [buildServiceName(service, item)]: callback(item)
+  }), {})
+}
 
-const prepareState = ({ config, state }) => { 
+const prepareState = (state) => { 
   const modules = fs.readdirSync('src/modules')
 
   modules.forEach(module => {
@@ -35,24 +38,24 @@ const prepareState = ({ config, state }) => {
     hasSchedules && runServices(module, 'schedules')
   })
 
-  return Promise.resolve({ config, state })
+  return Promise.resolve(state)
 }
 
-const buildModuleTopics = ({ config, state }) => buildService(state.topics, 'Topic', ({ name }) => ({
+const buildModuleTopics = (state) => buildService(state.topics, 'Topic', ({ name }) => ({
   Type: 'AWS::SNS::Topic',
   Properties: {
-    TopicName: kebabCase(config.project, name, config.stage)
+    TopicName: kebabCase(state.config.project, name, state.config.stage)
   }
 }))
-const buildModuleQueues = ({ config, state }) => buildService(state.topics, 'Queue', ({ name, options }) => ({
+const buildModuleQueues = (state) => buildService(state.queues, 'Queue', ({ name, options }) => ({
   Type: 'AWS::SNS::Queue',
   Properties: {
-    QueueName: kebabCase(config.project, name, config.stage),
+    QueueName: kebabCase(state.config.project, name, state.config.stage),
     DelaySeconds: options.timeout,
     FifoQueue: options.fifo
   }
 }))
-const buildModuleSubscriptions = ({ state }) => buildService(state.topics, 'Subscription', ({ topic, name }) => ({
+const buildModuleSubscriptions = (state) => buildService(state.queues, 'Subscription', ({ topic, name }) => ({
   Type: 'AWS::SNS::Subscription',
   Properties: {
     TopicArn: topicRef(topic),
@@ -65,10 +68,11 @@ const buildModuleSubscriptions = ({ state }) => buildService(state.topics, 'Subs
     Protocol: 'sqs'
   }
 }))
-const buildModuleResources = ({ config, state }) => {
-  const topics = buildModuleTopics({ config, state })
-  const queues = buildModuleQueues({ config, state })
-  const subscriptions = buildModuleSubscriptions({ config, state })
+const buildModuleResources = (state) => {
+  console.log(state)
+  const topics = buildModuleTopics(state)
+  const queues = buildModuleQueues(state)
+  const subscriptions = buildModuleSubscriptions(state)
 
   yaml.sync('./serverless.modules.resources.yml', {
     ...topics,
@@ -76,61 +80,82 @@ const buildModuleResources = ({ config, state }) => {
     ...subscriptions
   })
 
-  return Promise.resolve({ config, state })
+  return Promise.resolve(state)
 }
-const buildModulesEndpoints = ({ config, state }) => buildService(state.topics, 'Endpoint', ({ name, options }) => ({
-  name: kebabCase(config.project, 'endpoints', name, config.stage),
-  handler: `${path}.handler`,
-  timeout: 30,
-  events: [
-    {
-      http: {
-        path: options.path,
-        method: options.method
+const buildModulesEndpoints = (state) => {
+  const endpoints = buildService(state.endpoints, 'Endpoint', ({ name, path, options }) => ({
+    name: kebabCase(state.config.project, 'endpoints', name, state.config.stage),
+    handler: `${path}.handler`,
+    timeout: 30,
+    events: [
+      {
+        http: {
+          path: options.path,
+          method: options.method
+        }
       }
-    }
-  ]
-}))
-const buildModulesConsumers = ({ config, state }) => buildService(state.topics, 'Consumer', ({ name, options }) => ({
-  name: kebabCase(config.project, 'consumers', name, config.stage),
-  handler: concat(path, '.handler'),
-  timeout: options.timeout,
-  reservedConcurrency: options.concurrency,
-  events: [
-    {
-      sqs: {
-        arn: {
-          'Fn::GetAtt': [
-            serviceName(name, 'Queue'),
-            'Arn'
-          ]
-        },
-        batchSize: options.batchSize,
-        enabled: true
-      }
-    }
-  ]
-}))
-const buildModulesSchedules = ({ config, state }) => buildService(state.topics, 'Schedule', ({ name, options }) => ({
-  name: kebabCase(config.project, 'schedules', name, config.stage),
-  handler: concat(path, '.handler'),
-  timeout: options.timeout,
-  events: [
-    {
-      schedule: {
-        rate: options.rate,
-        enabled: true
-      }
-    }
-  ]
-}))
+    ]
+  }))
 
-const start = (config) => prepareState({ config, state })
-  .then(buildModuleResources)
-  .then(buildModulesEndpoints)
-  .then(buildModulesConsumers)
-  .then(buildModulesSchedules)
+  yaml.sync('./serverless.modules.endpoints.yml', endpoints)
 
-export {
+  return Promise.resolve(state)
+}
+const buildModulesConsumers = (state) => {
+  const consumers = buildService(state.queues, 'Consumer', ({ name, path, options }) => ({
+    name: kebabCase(state.config.project, 'consumers', name, state.config.stage),
+    handler: `${path}.handler`,
+    timeout: options.timeout,
+    reservedConcurrency: options.concurrency,
+    events: [
+      {
+        sqs: {
+          arn: {
+            'Fn::GetAtt': [
+              serviceName(name, 'Queue'),
+              'Arn'
+            ]
+          },
+          batchSize: options.batchSize,
+          enabled: true
+        }
+      }
+    ]
+  }))
+
+  yaml.sync('./serverless.modules.consumers.yml', consumers)
+
+  return Promise.resolve(state)
+}
+const buildModulesSchedules = (state) => {
+  const schedules = buildService(state.schedules, 'Schedule', ({ name, path, options }) => ({
+    name: kebabCase(state.config.project, 'schedules', name, state.config.stage),
+    handler: `${path}.handler`,
+    timeout: options.timeout,
+    events: [
+      {
+        schedule: {
+          rate: options.rate,
+          enabled: true
+        }
+      }
+    ]
+  }))
+
+  yaml.sync('./serverless.modules.schedules.yml', schedules)
+
+  return Promise.resolve(state)
+}
+
+const start = (config) => {
+  state.setConfig(config)
+  prepareState(state)
+    .then(buildModuleResources)
+    .then(buildModulesEndpoints)
+    .then(buildModulesConsumers)
+    .then(buildModulesSchedules)
+}
+
+export default {
   start
 }
