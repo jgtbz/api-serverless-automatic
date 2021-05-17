@@ -1,10 +1,10 @@
-import AWS from './AWS'
 import Endpoints from './Endpoints'
 import Consumers from './Consumers'
 import Schedules from './Schedules'
-import { pipe, uniqBy, prop, concat } from 'ramda'
+import AWS from './AWS'
+import { uniqBy, prop, concat } from 'ramda'
 
-const uniqByName = pipe(uniqBy(prop('name')))
+const uniqByName = uniqBy(prop('name'))
 
 export const state = {
   topics: [],
@@ -26,8 +26,8 @@ export const state = {
 }
 
 export default {
-  AWS,
   Endpoints: Endpoints(state),
   Consumers: Consumers(state),
-  Schedules: Schedules(state)
+  Schedules: Schedules(state),
+  AWS
 }

@@ -1,27 +1,27 @@
 UsersCreateTopic:
   Type: 'AWS::SNS::Topic'
   Properties:
-    TopicName: undefined-users-create-undefined
+    TopicName: basic-users-create-dev
 UsersBirthdayTopic:
   Type: 'AWS::SNS::Topic'
   Properties:
-    TopicName: undefined-users-birthday-undefined
+    TopicName: basic-users-birthday-dev
 UsersCreateWalletQueue:
   Type: 'AWS::SNS::Queue'
   Properties:
-    QueueName: undefined-users-create-wallet-undefined
+    QueueName: basic-users-create-wallet-dev
     DelaySeconds: 900
     FifoQueue: false
 UsersSendEmailWelcomeQueue:
   Type: 'AWS::SNS::Queue'
   Properties:
-    QueueName: undefined-users-send-email-welcome-undefined
+    QueueName: basic-users-send-email-welcome-dev
     DelaySeconds: 900
     FifoQueue: false
 UsersSendEmailBirthdateQueue:
   Type: 'AWS::SNS::Queue'
   Properties:
-    QueueName: undefined-users-send-email-birthdate-undefined
+    QueueName: basic-users-send-email-birthdate-dev
     DelaySeconds: 900
     FifoQueue: false
 UsersCreateWalletSubscription:

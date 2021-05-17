@@ -1,5 +1,5 @@
 UsersCreateEndpoint:
-  name: undefined-endpoints--users-create-undefined
+  name: basic-endpoints-users-create-dev
   handler: src/modules/users/endpoints/create.handler
   timeout: 30
   events:

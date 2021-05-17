@@ -1,17 +1,25 @@
 import fs from 'fs'
 import yaml from 'write-yaml'
+import { pipe, juxt, head, toUpper, tail, join, concat } from 'ramda'
 
 import { state } from './app'
 import config from './config'
 
-const capitalize = ([first = '', ...rest]) => first.toUpperCase() + rest.join('').toLowerCase()
-const capitalizeName = (value = '') => {
+config.project = 'basic'
+config.stage = 'dev'
+
+const capitalize = pipe(
+  juxt([pipe(head, toUpper), tail]),
+  join('')
+)
+const capitalizeKebabCase = (value = '') => {
   const names = value.split('-')
   return names.map(capitalize).join('')
 }
 
-const startState = () => {
+const prepareState = (state) => {
   const modules = fs.readdirSync('src/modules')
+
   modules.forEach(module => {
     const hasEndpoints = fs.existsSync(`src/modules/${module}/endpoints`)
 
@@ -40,91 +48,70 @@ const startState = () => {
       })
     }
   })
+
+  return Promise.resolve(state)
 }
 
-const start = () => {
-  startState()
+const serviceName = (name, suffix) => concat(capitalizeKebabCase(name), suffix)
+const kebabCase = (...values) => join('-', values)
+const topicRef = (value) => concat('!Ref ', serviceName(value, 'Topic'))
 
-  const topics = state.topics.reduce((result, { name }) => ({
-    ...result,
-    [capitalizeName(name) + 'Topic']: {
-      Type: 'AWS::SNS::Topic',
-      Properties: {
-        TopicName: config.project + '-' + name + '-' + config.stage
-      }
+const buildModuleTopics = (state) => state.topics.reduce((result, { name }) => ({
+  ...result,
+  [serviceName(name, 'Topic')]: {
+    Type: 'AWS::SNS::Topic',
+    Properties: {
+      TopicName: kebabCase(config.project, name, config.stage)
     }
-  }), {})
-  const queues = state.queues.reduce((result, { name, options }) => ({
-    ...result,
-    [capitalizeName(name) + 'Queue']: {
-      Type: 'AWS::SNS::Queue',
-      Properties: {
-        QueueName: config.project + '-' + name + '-' + config.stage,
-        DelaySeconds: options.timeout,
-        FifoQueue: options.fifo
-      }
+  }
+}), {})
+const buildModuleQueues = (state) => state.queues.reduce((result, { name, options }) => ({
+  ...result,
+  [serviceName(name, 'Queue')]: {
+    Type: 'AWS::SNS::Queue',
+    Properties: {
+      QueueName: kebabCase(config.project, name, config.stage),
+      DelaySeconds: options.timeout,
+      FifoQueue: options.fifo
     }
-  }), {})
-  const subscriptions = state.queues.reduce((result, { topic, name }) => ({
-    ...result,
-    [capitalizeName(name) + 'Subscription']: {
-      Type: 'AWS::SNS::Subscription',
-      Properties: {
-        TopicArn: '!Ref' + ' ' + capitalizeName(topic) + 'Topic',
-        Endpoint: {
-          'Fn::GetAtt:': [
-            capitalizeName(name) + 'Queue',
-            'Arn'
-          ]
-        },
-        Protocol: 'sqs'
-      }
+  }
+}), {})
+const buildModuleSubscriptions = (state) => state.queues.reduce((result, { topic, name }) => ({
+  ...result,
+  [serviceName(name, 'Subscription')]: {
+    Type: 'AWS::SNS::Subscription',
+    Properties: {
+      TopicArn: topicRef(topic),
+      Endpoint: {
+        'Fn::GetAtt:': [
+          serviceName(name, 'Queue'),
+          'Arn'
+        ]
+      },
+      Protocol: 'sqs'
     }
-  }), {})
-  const consumers = state.queues.reduce((result, { name, path, options }) => ({
-    ...result,
-    [capitalizeName(name) + 'Consumer']: {
-      name: config.project + '-' + name + '-' + config.stage,
-      handler: path + '.handler',
-      timeout: options.timeout,
-      reservedConcurrency: options.concurrency,
-      events: [
-        {
-          sqs: {
-            arn: {
-              'Fn::GetAtt': [
-                capitalizeName(name) + 'Queue',
-                'Arn'
-              ]
-            },
-            batchSize: options.batchSize,
-            enabled: true
-          }
-        }
-      ]
-    }
-  }), {})
-  const schedules = state.schedules.reduce((result, { name, path, options }) => ({
-    ...result,
-    [capitalizeName(name) + 'Schedule']: {
-      name: config.project + '-' + 'schedules' + '-' + name + '-' + config.stage,
-      handler: path + '.handler',
-      timeout: options.timeout,
-      events: [
-        {
-          schedule: {
-            rate: options.rate,
-            enabled: true
-          }
-        }
-      ]
-    }
-  }), {})
+  }
+}), {})
+
+const buildModuleResources = (state) => {
+  const topics = buildModuleTopics(state)
+  const queues = buildModuleQueues(state)
+  const subscriptions = buildModuleSubscriptions(state)
+
+  yaml.sync('./serverless.modules.resources.yml', {
+    ...topics,
+    ...queues,
+    ...subscriptions
+  })
+
+  return Promise.resolve(state)
+}
+const buildModulesEndpoints = (state) => {
   const endpoints = state.endpoints.reduce((result, { name, path, options }) => ({
     ...result,
-    [capitalizeName(name) + 'Endpoint']: {
-      name: config.project + '-' + 'endpoints-' + '-' + name + '-' + config.stage,
-      handler: path + '.handler',
+    [serviceName(name, 'Endpoint')]: {
+      name: kebabCase(config.project, 'endpoints', name, config.stage),
+      handler: concat(path, '.handler'),
       timeout: 30,
       events: [
         {
@@ -137,15 +124,66 @@ const start = () => {
     }
   }), {})
 
-  const resourcesModules = { ...topics, ...queues, ...subscriptions }
-  const resourcesConsumers = { ...consumers }
-  const resourcesSchedules = { ...schedules }
-  const resourcesEndpoints = { ...endpoints }
+  yaml.sync('./serverless.modules.endpoints.yml', endpoints)
 
-  yaml.sync('./serverless.modules.resources.yml', resourcesModules)
-  yaml.sync('./serverless.modules.consumers.yml', resourcesConsumers)
-  yaml.sync('./serverless.modules.schedules.yml', resourcesSchedules)
-  yaml.sync('./serverless.modules.endpoints.yml', resourcesEndpoints)
+  return Promise.resolve(state)
+}
+const buildModulesConsumers = (state) => {
+  const consumers = state.queues.reduce((result, { name, path, options }) => ({
+    ...result,
+    [capitalizeKebabCase(name) + 'Consumer']: {
+      name: kebabCase(config.project, 'consumers', name, config.stage),
+      handler: concat(path, '.handler'),
+      timeout: options.timeout,
+      reservedConcurrency: options.concurrency,
+      events: [
+        {
+          sqs: {
+            arn: {
+              'Fn::GetAtt': [
+                serviceName(name, 'Queue'),
+                'Arn'
+              ]
+            },
+            batchSize: options.batchSize,
+            enabled: true
+          }
+        }
+      ]
+    }
+  }), {})
+
+  yaml.sync('./serverless.modules.consumers.yml', consumers)
+
+  return Promise.resolve(state)
+}
+const buildModulesSchedules = (state) => {
+  const schedules = state.schedules.reduce((result, { name, path, options }) => ({
+    ...result,
+    [capitalizeKebabCase(name) + 'Schedule']: {
+      name: kebabCase(config.project, 'schedules', name, config.stage),
+      handler: concat(path, '.handler'),
+      timeout: options.timeout,
+      events: [
+        {
+          schedule: {
+            rate: options.rate,
+            enabled: true
+          }
+        }
+      ]
+    }
+  }), {})
+
+  yaml.sync('./serverless.modules.schedules.yml', schedules)
+
+  return Promise.resolve(state)
 }
 
-start()
+const start = (state) => prepareState(state)
+  .then(buildModuleResources)
+  .then(buildModulesEndpoints)
+  .then(buildModulesConsumers)
+  .then(buildModulesSchedules)
+
+start(state)
