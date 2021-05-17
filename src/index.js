@@ -5,9 +5,6 @@ import { pipe, juxt, head, toUpper, tail, join, concat } from 'ramda'
 import { state } from './app'
 import config from './config'
 
-config.project = 'basic'
-config.stage = 'dev'
-
 const capitalize = pipe(
   juxt([pipe(head, toUpper), tail]),
   join('')
