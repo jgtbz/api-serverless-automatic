@@ -1,11 +1,10 @@
 import AWS from 'aws-sdk'
-import config from '../../../config'
 
-const send = async ({ topic, message }) => {
+const send = (state) => async ({ topic, message }) => {
   const Message = typeof(message) === 'string'
     ? message
     : JSON.stringify(message)
-  const TopicArn =  `arn:aws:sns:${config.aws.region}:${config.aws.id}:${config.project}-${topic}-${config.stage}`
+  const TopicArn =  `arn:aws:sns:${state.config.aws.region}:${state.config.aws.id}:${state.config.project}-${topic}-${state.config.stage}`
 
   const params = {
     Message,

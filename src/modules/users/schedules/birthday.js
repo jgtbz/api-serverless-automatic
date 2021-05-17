@@ -1,4 +1,4 @@
-import App from '../../../app'
+import App from '../../../app/lib'
 
 App.Schedules.register({
   rate: 'rate (50 minutes)',

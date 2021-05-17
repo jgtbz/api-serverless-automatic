@@ -1,5 +1,5 @@
 import send from './send'
 
-export default {
-  send
-}
+export default (state) => ({
+  send: send(state)
+})

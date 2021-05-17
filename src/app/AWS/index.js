@@ -1,5 +1,5 @@
 import SNS from './SNS'
 
-export default {
-  SNS
-}
+export default (state) => ({
+  SNS: SNS(state)
+})

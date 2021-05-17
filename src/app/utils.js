@@ -11,6 +11,26 @@ const getContext = () => {
   }
 }
 
+const uniqBy = (by, values) => values.reduce((result, prop) => {
+  const exists = result.some(item => item[by] === prop[by])
+
+  if (exists) {
+    return result
+  }
+
+  return [
+    ...result,
+    prop
+  ]
+}, [])
+
+const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+
+const capitalizeKebabCase = (value) => value.split('-').map(capitalize).join('')
+
 export {
-  getContext
+  getContext,
+  uniqBy,
+  capitalize,
+  capitalizeKebabCase
 }
