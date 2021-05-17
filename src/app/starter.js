@@ -17,7 +17,6 @@ const runServices = (module, service) => {
 
 const buildServiceName = (value, { name }) => serviceName(name, value)
 const buildService = (value = [], service, callback) => {
-  console.log(value, service)
   return value.reduce((result, item) => ({
     ...result,
     [buildServiceName(service, item)]: callback(item)
@@ -69,7 +68,6 @@ const buildModuleSubscriptions = (state) => buildService(state.queues, 'Subscrip
   }
 }))
 const buildModuleResources = (state) => {
-  console.log(state)
   const topics = buildModuleTopics(state)
   const queues = buildModuleQueues(state)
   const subscriptions = buildModuleSubscriptions(state)
