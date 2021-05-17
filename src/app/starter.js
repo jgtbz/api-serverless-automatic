@@ -16,12 +16,10 @@ const runServices = (module, service) => {
 }
 
 const buildServiceName = (value, { name }) => serviceName(name, value)
-const buildService = (value = [], service, callback) => {
-  return value.reduce((result, item) => ({
-    ...result,
-    [buildServiceName(service, item)]: callback(item)
-  }), {})
-}
+const buildService = (value, service, callback) => value.reduce((result, item) => ({
+  ...result,
+  [buildServiceName(service, item)]: callback(item)
+}), {})
 
 const prepareState = (state) => { 
   const modules = fs.readdirSync('src/modules')
