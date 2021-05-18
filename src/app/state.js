@@ -14,6 +14,14 @@ const state = {
       useNewUrlParser: true,
       useUnifiedTopology: true
     },
+    server: {
+      secret: ''
+    },
+    endpoints: {
+      middlewares: [],
+      middlewaresBeforeJWT: [],
+      middlewaresAfterJWT: []
+    },
     aws: {
       id: '',
       region: ''

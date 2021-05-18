@@ -28,9 +28,12 @@ const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1).toL
 
 const capitalizeKebabCase = (value) => value.split('-').map(capitalize).join('')
 
+const pipeAsync = (...fns) => (...args) => fns.reduce((p, f) => p.then(f), Promise.resolve(...args))
+
 export {
   getContext,
   uniqBy,
   capitalize,
-  capitalizeKebabCase
+  capitalizeKebabCase,
+  pipeAsync
 }

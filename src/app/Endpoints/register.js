@@ -1,5 +1,6 @@
 import Database from '../Database'
-import { getContext } from '../utils'
+import Middlewares from './Middlewares'
+import { getContext, pipeAsync } from '../utils'
 
 let app
 
@@ -9,7 +10,7 @@ const bootstrap = async (state) => {
   }
 }
 
-const register = (state) => ({ path, method, isPublic, middlewares }) => {
+const register = (state) => ({ path, method, middlewares, isPublic }) => {
   const { module, file, path: contextPath } = getContext()
 
   const moduleEndpoint = `${module}-${file}`
@@ -28,39 +29,46 @@ const register = (state) => ({ path, method, isPublic, middlewares }) => {
     try {
       await bootstrap(state)
 
-      const { body, headers } = event
-      const { module, action, version = 'v1', payload } = JSON.parse(body)
-  
-      if (!middlewares) {
-        throw { status: 404, message: 'Not Found' }
+      const { queryStringParameters, pathParameters, body, headers } = event
+
+      const request = {
+        headers,
+        query: queryStringParameters ?? {},
+        params: pathParameters ?? {},
+        body: body ? JSON.parse(body) : {}
       }
-  
-      const execute = Utils.pipeAsync(
-        // Middlewares.decode,
-        // Loggers.before(id),
-        // Middlewares.jwt({ isPublic }),
-        // Middlewares.tenant,
-        // Middlewares.paginate,
-        // Middlewares.sort,
-        // Middlewares.query,
+
+      const options = {
+        isPublic
+      }
+
+      const execute = pipeAsync(
+        ...state.config.endpoints.middlewares,
+        Middlewares.decode(state, options),
+        ...state.config.endpoints.middlewaresBeforeJWT,
+        Middlewares.Loggers.before(state, options)(id),
+        Middlewares.jwt(state, options),
+        ...state.config.endpoints.middlewaresAfterJWT,
+        Middlewares.paginate(state, options),
+        Middlewares.sort(state, options),
+        Middlewares.query(state, options),
         ...middlewares,
-        // Loggers.after(id)
+        Middlewares.Loggers.after(state, options)(id)
       )
   
-      const result = await execute({ headers, module, action, version, ...payload })
+      const result = await execute(request)
   
       const response = {
         statusCode: 200,
         body: JSON.stringify(result)
       }
-  
       return response
     } catch (error) {
-      console.log(error)
-      // await Loggers.after(id)(error)
-      const response = !error.status
-        ? { statusCode: 500, body: JSON.stringify(error) }
-        : { statusCode: error.status, body: JSON.stringify(error) }
+      await Middlewares.Loggers.after(state, options)(id)(error)
+      const response = {
+        statusCode: error.status ?? 500,
+        body: JSON.stringify(error)
+      }
       return response
     }
   }
