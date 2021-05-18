@@ -1,4 +1,6 @@
 import Database from '../Database'
+import Loggers from '../Loggers'
+import AWS from '../AWS'
 import { getContext } from '../utils'
 
 let app
@@ -32,9 +34,16 @@ const register = (state) => ({ topic, queue, concurrency = 1, batchSize = 1, tim
   })
 
   return async (event, context) => {
-    // const id = context.awsRequestId
-    await bootstrap(state)
-    await handler(event, context)
+    const id = context.awsRequestId
+    const message = AWS.SNS.decodeMessage(event)
+    try {
+      await bootstrap(state)
+      await Loggers.start(id)(message)
+      const response = await handler(message)
+      await Loggers.success(id)(response)
+    } catch (error) {
+      await Loggers.error(id)(error)
+    }
   }
 }
 

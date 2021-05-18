@@ -8,5 +8,11 @@ export default {
   },
   response: {
     type: String
+  },
+  finishedAt: {
+    type: Date
+  },
+  status: {
+    type: String
   }
 }

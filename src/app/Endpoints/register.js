@@ -1,4 +1,5 @@
 import Database from '../Database'
+import Loggers from '../Loggers'
 import Middlewares from './Middlewares'
 import { getContext, pipeAsync } from '../utils'
 
@@ -43,17 +44,17 @@ const register = (state) => ({ path, method, middlewares, isPublic }) => {
       }
 
       const execute = pipeAsync(
-        ...state.config.endpoints.middlewares,
         Middlewares.decode(state, options),
+        ...state.config.endpoints.middlewares,
         ...state.config.endpoints.middlewaresBeforeJWT,
-        Middlewares.Loggers.before(state, options)(id),
+        Loggers.start(id),
         Middlewares.jwt(state, options),
         ...state.config.endpoints.middlewaresAfterJWT,
         Middlewares.paginate(state, options),
         Middlewares.sort(state, options),
         Middlewares.query(state, options),
         ...middlewares,
-        Middlewares.Loggers.after(state, options)(id)
+        Loggers.success(id)
       )
   
       const result = await execute(request)
@@ -64,7 +65,7 @@ const register = (state) => ({ path, method, middlewares, isPublic }) => {
       }
       return response
     } catch (error) {
-      await Middlewares.Loggers.after(state, options)(id)(error)
+      await Loggers.error(id)(error)
       const response = {
         statusCode: error.status ?? 500,
         body: JSON.stringify(error)
