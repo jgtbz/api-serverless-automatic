@@ -1,15 +1,15 @@
+import Database from '../Database'
 import { getContext } from '../utils'
 
 let app
 
-const bootstrap = async () => {
+const bootstrap = async (state) => {
   if (!app) {
-    // app = await Database.connect(config.database)
-    app = 'database connected'
+    app = await Database.connect(state.config.database)
   }
 }
 
-const register = (state) => ({ path, method, isPublic, database = false, middlewares }) => {
+const register = (state) => ({ path, method, isPublic, middlewares }) => {
   const { module, file, path: contextPath } = getContext()
 
   const moduleEndpoint = `${module}-${file}`
@@ -26,10 +26,8 @@ const register = (state) => ({ path, method, isPublic, database = false, middlew
   return async (event, context) => {
     const id = context.awsRequestId
     try {
-      if (database) {
-        await bootstrap()
-      }
-      
+      await bootstrap(state)
+
       const { body, headers } = event
       const { module, action, version = 'v1', payload } = JSON.parse(body)
   

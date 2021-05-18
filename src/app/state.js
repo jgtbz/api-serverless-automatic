@@ -7,6 +7,13 @@ const state = {
   endpoints: [],
   config: {
     project: '',
+    database: {
+      URI: '',
+      useCreateIndex: true,
+      useFindAndModify: false,
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    },
     aws: {
       id: '',
       region: ''
