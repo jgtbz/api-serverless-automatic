@@ -12,11 +12,13 @@ const bootstrap = async (state) => {
 }
 
 const register = (state) => ({ path, method, middlewares, isPublic }) => {
-  const { module, file, path: contextPath } = getContext()
+  const { module, version, file, path: contextPath } = getContext()
 
   const moduleEndpoint = `${module}-${file}`
 
   state.addEndpoint({
+    module,
+    version,
     name: moduleEndpoint,
     path: contextPath,
     options: {

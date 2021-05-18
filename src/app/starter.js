@@ -8,10 +8,25 @@ const kebabCase = (...values) => values.join('-')
 const topicRef = (value) => `!Ref ${serviceName(value, 'Topic')}`
 
 const hasService = (module, service) => fs.readdirSync(`src/modules/${module}/${service}`)
-const runServices = (module, service) => {
-  const services = fs.readdirSync(`src/modules/${module}/${service}`)
-  services.forEach(value => {
-    require(`../modules/${module}/${service}/${value}`)
+const runEndpoints = (module) => {
+  const versions = fs.readdirSync(`src/modules/${module}/endpoints`)
+  versions.forEach(version => {
+    const services = fs.readdirSync(`src/modules/${module}/endpoints/${version}`)
+    services.forEach(value => {
+      require(`../modules/${module}/endpoints/${version}/${value}`)
+    })
+  })
+}
+const runConsumers = (module) => {
+  const services = fs.readdirSync(`src/modules/${module}/consumers`)
+  services.forEach(service => {
+    require(`../modules/${module}/consumers/${service}`)
+  })
+}
+const runSchedules = (module) => {
+  const services = fs.readdirSync(`src/modules/${module}/schedules`)
+  services.forEach(service => {
+    require(`../modules/${module}/schedules/${service}`)
   })
 }
 
@@ -21,18 +36,18 @@ const buildService = (value, service, callback) => value.reduce((result, item) =
   [buildServiceName(service, item)]: callback(item)
 }), {})
 
-const prepareState = (state) => { 
+const prepareState = (state) => {
   const modules = fs.readdirSync('src/modules')
 
   modules.forEach(module => {
     const hasEndpoints = hasService(module, 'endpoints')
-    hasEndpoints && runServices(module, 'endpoints')
+    hasEndpoints && runEndpoints(module)
 
     const hasConsumers = hasService(module, 'consumers')
-    hasConsumers && runServices(module, 'consumers')
+    hasConsumers && runConsumers(module)
 
     const hasSchedules = hasService(module, 'schedules')
-    hasSchedules && runServices(module, 'schedules')
+    hasSchedules && runSchedules(module)
   })
 
   return Promise.resolve(state)
@@ -79,14 +94,14 @@ const buildModuleResources = (state) => {
   return Promise.resolve(state)
 }
 const buildModulesEndpoints = (state) => {
-  const endpoints = buildService(state.endpoints, 'Endpoint', ({ name, path, options }) => ({
+  const endpoints = buildService(state.endpoints, 'Endpoint', ({ module, version, name, path, options }) => ({
     name: kebabCase(state.config.project, 'endpoints', name, state.config.stage),
     handler: `${path}.handler`,
     timeout: 30,
     events: [
       {
         http: {
-          path: options.path,
+          path: `${module}/${version}/${options.path}`,
           method: options.method
         }
       }

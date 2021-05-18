@@ -1,4 +1,4 @@
-import App from '../../../app/lib'
+import App from '../../../../app/lib'
 
 const middleware = async ({ name }) => {
   await App.AWS.SNS.send({ topic: 'users-create', message: { from: 'Endpoint', name } })
