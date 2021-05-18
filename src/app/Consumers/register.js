@@ -1,4 +1,13 @@
+import Database from '../Database'
 import { getContext } from '../utils'
+
+let app
+
+const bootstrap = async (state) => {
+  if (!app) {
+    app = await Database.connect(state.config.database)
+  }
+}
 
 const register = (state) => ({ topic, queue, concurrency = 1, batchSize = 1, timeout = 900, fifo = false, handler }) => {
   const { module, path } = getContext()
@@ -22,7 +31,11 @@ const register = (state) => ({ topic, queue, concurrency = 1, batchSize = 1, tim
     }
   })
 
-  return handler
+  return async (event, context) => {
+    // const id = context.awsRequestId
+    await bootstrap(state)
+    await handler(event, context)
+  }
 }
 
 export default register
